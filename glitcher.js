@@ -1,6 +1,7 @@
 module.exports.copy = copy
 module.exports.invertRGBA = invertRGBA
 module.exports.reverseRGBA = reverseRGBA
+module.exports.redBlueOverlay = redBlueOverlay
 
 function copy(rgba) {
   var copy = new Buffer(rgba.length)
@@ -36,3 +37,17 @@ function reverseRGBA(rgba) {
   }
   return rgba
 }
+
+function redBlueOverlay(original) {
+  var shifted = new Buffer(original.length)
+  original.copy(shifted)
+  var len = shifted.length
+  var half = len / 2
+  for (var k = half, l = 0; k < len; k+= 4, l+= 4) {
+    shifted[k] = original[l]
+  }
+  return shifted
+}
+
+
+
