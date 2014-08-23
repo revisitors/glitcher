@@ -13,6 +13,11 @@ API
 
 Inverts an RGBA buffer.
 
+`var flipped = reverseRGBA(buffer)`
+---
+
+Flips (vertically) a RGBA buffer by reversing the pixels.
+
 LICENSE
 =======
 
