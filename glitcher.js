@@ -2,6 +2,8 @@ module.exports.copy = copy
 module.exports.invertRGBA = invertRGBA
 module.exports.reverseRGBA = reverseRGBA
 module.exports.redBlueOverlay = redBlueOverlay
+module.exports.clampColors = clampColors
+module.exports.glitchClamp = glitchClamp
 
 function copy(rgba) {
   var copy = new Buffer(rgba.length)
@@ -49,5 +51,83 @@ function redBlueOverlay(original) {
   return shifted
 }
 
+// An intentionally glitchy color comparator
+function colorDiff(reference, pixel) {
+  var r = reference[0] - pixel[0]
+  var g = reference[1] - pixel[1]
+  var b = reference[2] - pixel[2]
 
+  return Math.abs(r) + Math.abs(g) + Math.abs(b)
+}
 
+function clampColors(rgba, max) {
+  // take the first `max` colors seen
+  max = max || 256
+  var colorMap = {}
+  var colors = []
+  for (var i = 0; i < rgba.length; i+= 4) {
+    var color = rgba.slice(i, i + 4)
+    if (colors.length < max && !colorMap[color]) {
+      colors.push(color)
+      colorMap[color] = color
+    }
+    else {
+      if (!colorMap[color]) {
+        var closest = 0
+        var best = Number.MAX_VALUE
+        for (var j = 0; j < colors.length; j++) {
+          var diff = colorDiff(colors[j], color)
+          if (diff < best) {
+            closest = j
+            best = diff
+          }
+          if (diff === 0) {
+            break;
+          }
+        }
+        colors[closest].copy(rgba, i)
+      }
+    }
+  }
+}
+
+function randomPixel() {
+  return new Buffer([
+    (Math.random() * 256) | 0,
+    (Math.random() * 256) | 0,
+    (Math.random() * 256) | 0,
+    0xff
+  ])
+}
+
+function glitchClamp(rgba, max) {
+  // take the first `max` colors seen
+  max = max || 256
+  var colors = []
+  var glitchtable = []
+  for (var i = 0; i < rgba.length; i+= 4) {
+    var closest = 0
+    var color = rgba.slice(i, i + 4)
+    var colorMap = {}
+    if (colors.length < max && !colorMap[color]) {
+      closest = colors.length
+      colors.push(color)
+      glitchtable.push(randomPixel())
+      colorMap[color] = 1
+    }
+    else {
+      var best = Number.MAX_VALUE
+      for (var j = 0; j < colors.length; j++) {
+        var diff = colorDiff(colors[j], color)
+        if (diff < best) {
+          closest = j
+          best = diff
+        }
+        if (diff === 0) {
+          break;
+        }
+      }
+    }
+    glitchtable[closest].copy(rgba, i)
+  }
+}
