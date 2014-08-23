@@ -5,6 +5,15 @@ glitcher
 
 An image glitching toolbox.
 
+Running Examples
+================
+
+To see demo output of API functions, clone this repository and then use `node` to run any of the files in the `examples/` folder. 
+
+For example, to run `flip.js`, change directories into the `examples/` folder, and then run `node flip.js`.
+
+Example files pull source images from the `img/` folder and then save their glitch transformations to the `output/` folder.
+
 API
 ===
 
