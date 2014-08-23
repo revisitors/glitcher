@@ -38,7 +38,7 @@ function reverseRGBA(rgba) {
   return rgba
 }
 
-function shifty(original) {
+function halfOverlay(original) {
   var shifted = new Buffer(original.length)
   original.copy(shifted)
   var len = shifted.length
