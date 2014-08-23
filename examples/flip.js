@@ -1,7 +1,7 @@
 var glitcher = require("../glitcher")
 
 var fs = require("fs")
-var orig = fs.readFileSync("./doge_jump2.gif")
+var orig = fs.readFileSync("./img/doge_jump2.gif")
 var gifwriter = require("writegif")
 var readimage = require("readimage")
 
@@ -19,7 +19,7 @@ function flipImage(orig, callback) {
 
 flipImage(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("flipped.gif", gif)
+    fs.writeFileSync("output/flipped.gif", gif)
   })
 })
 
@@ -40,6 +40,6 @@ function flipEveryOther(orig, callback) {
 
 flipEveryOther(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("flipped2.gif", gif)
+    fs.writeFileSync("output/flipped2.gif", gif)
   })
 })

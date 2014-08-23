@@ -1,7 +1,7 @@
 var glitcher = require("../glitcher")
 
 var fs = require("fs")
-var file = process.argv[2] || "./owl-glasses.jpg"
+var file = process.argv[2] || "./img/owl-glasses.jpg"
 var max = process.argv[3] || 256
 var orig = fs.readFileSync(file)
 var gifwriter = require("writegif")
@@ -21,7 +21,7 @@ function ghost(orig, callback) {
 
 ghost(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("ghosted.gif", gif)
+    fs.writeFileSync("output/ghosted.gif", gif)
   })
 })
 
@@ -39,6 +39,6 @@ function glitch(orig, callback) {
 
 glitch(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("glitchghosted.gif", gif)
+    fs.writeFileSync("output/glitchghosted.gif", gif)
   })
 })

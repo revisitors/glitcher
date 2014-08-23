@@ -1,7 +1,7 @@
 var glitcher = require("../glitcher")
 
 var fs = require("fs")
-var orig = fs.readFileSync("./doge_jump2.gif")
+var orig = fs.readFileSync("./img/doge_jump2.gif")
 var gifwriter = require("writegif")
 var readimage = require("readimage")
 
@@ -19,7 +19,7 @@ function invertImage(orig, callback) {
 
 invertImage(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("inverted.gif", gif)
+    fs.writeFileSync("output/inverted.gif", gif)
   })
 })
 
@@ -40,6 +40,6 @@ function invertEveryOther(orig, callback) {
 
 invertEveryOther(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("inverted2.gif", gif)
+    fs.writeFileSync("output/inverted2.gif", gif)
   })
 })
