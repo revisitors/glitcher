@@ -4,6 +4,8 @@ module.exports.reverseRGBA = reverseRGBA
 module.exports.redBlueOverlay = redBlueOverlay
 module.exports.clampColors = clampColors
 module.exports.glitchClamp = glitchClamp
+module.exports.ghostColors = ghostColors
+module.exports.glitchGhost = glitchGhost
 
 function copy(rgba) {
   var copy = new Buffer(rgba.length)
@@ -129,5 +131,53 @@ function glitchClamp(rgba, max) {
       }
     }
     glitchtable[closest].copy(rgba, i)
+  }
+}
+
+function ghostColors(rgba, max) {
+  // take the first `max` colors seen
+  max = max || 256
+  var colorMap = {}
+  var colors = []
+  var ghost = randomPixel()
+  for (var i = 0; i < rgba.length; i+= 4) {
+    var color = rgba.slice(i, i + 4)
+    if (colors.length < max && !colorMap[color]) {
+      colors.push(color)
+      colorMap[color] = color
+    }
+    else {
+      if (!colorMap[color]) {
+        ghost.copy(rgba, i)
+      }
+    }
+  }
+}
+
+function randomPalette(size) {
+  var palette = []
+  for (var i = 0; i < size; i++) {
+    palette.push(randomPixel())
+  }
+  return palette
+}
+
+function glitchGhost(rgba, max) {
+  // take the first `max` colors seen
+  max = max || 256
+  var colorMap = {}
+  var colors = []
+  var ghostPalette = randomPalette(max)
+  for (var i = 0; i < rgba.length; i+= 4) {
+    var color = rgba.slice(i, i + 4)
+    if (colors.length < max && !colorMap[color]) {
+      colors.push(color)
+      colorMap[color] = color
+    }
+    else {
+      if (!colorMap[color]) {
+        ghostPalette[(Math.random() * max) | 0].copy(rgba, i)
+      }
+    }
   }
 }

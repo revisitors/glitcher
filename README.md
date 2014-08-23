@@ -31,7 +31,17 @@ A slightly glitchy color clamp to `maxColors` (default 256).
 `glitchClamp(buffer[, maxColors])`
 ---
 
-A randomizing color clamper. Randomizes a palate limited to `maxColors` (default 256).
+A randomizing color clamper. Randomizes a palette limited to `maxColors` (default 256).
+
+`ghostColors(buffer[, maxColors])`
+---
+
+A ghosting color palette -- the first `maxColors` (default 256) are processed, any colors outside the first set are assigned the same hue.
+
+`glichGhost(buffer[, maxColors])`
+---
+
+A ghosting color palette -- the first `maxColors` (default 256) are processed, any other colors are assigned a hue from a randomly generated palette of `maxColors` hues.
 
 LICENSE
 =======
