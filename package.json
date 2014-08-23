@@ -1,0 +1,33 @@
+{
+  "name": "glitcher",
+  "version": "0.0.0",
+  "description": "A tool for glitching images.",
+  "main": "glitcher.js",
+  "directories": {
+    "example": "examples",
+    "test": "test"
+  },
+  "dependencies": {
+    "readimage": "^1.0.0",
+    "tape": "^2.14.0",
+    "writegif": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node test/"
+  },
+  "keywords": [
+    "image",
+    "glitch"
+  ],
+  "author": "Bryce B. Baril",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:revisitors/glitcher.git"
+  },
+  "bugs": {
+    "url": "https://github.com/revisitors/glitcher/issues"
+  },
+  "homepage": "https://github.com/revisitors/glitcher"
+}
