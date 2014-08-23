@@ -5,25 +5,25 @@ var orig = fs.readFileSync("./doge_jump2.gif")
 var gifwriter = require("writegif")
 var readimage = require("readimage")
 
-function invertImage(orig, callback) {
+function flipImage(orig, callback) {
   readimage(orig, function (err, image) {
     if (err) {
       return callback(err)
     }
     image.frames.forEach(function (frame) {
-      frame.data = glitcher.invertRGBA(glitcher.copy(frame.data))
+      frame.data = glitcher.reverseRGBA(glitcher.copy(frame.data))
     })
     return callback(null, image)
   })
 }
 
-invertImage(orig, function (err, img) {
+flipImage(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("inverted.gif", gif)
+    fs.writeFileSync("flipped.gif", gif)
   })
 })
 
-function invertEveryOther(orig, callback) {
+function flipEveryOther(orig, callback) {
   readimage(orig, function (err, image) {
     if (err) {
       return callback(err)
@@ -32,14 +32,14 @@ function invertEveryOther(orig, callback) {
       if (i % 2 === 0) {
         return
       }
-      frame.data = glitcher.invertRGBA(glitcher.copy(frame.data))
+      frame.data = glitcher.reverseRGBA(glitcher.copy(frame.data))
     })
     return callback(null, image)
   })
 }
 
-invertEveryOther(orig, function (err, img) {
+flipEveryOther(orig, function (err, img) {
   gifwriter(img, function (err, gif) {
-    fs.writeFileSync("inverted2.gif", gif)
+    fs.writeFileSync("flipped2.gif", gif)
   })
 })
