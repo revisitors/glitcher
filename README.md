@@ -1,17 +1,17 @@
-XXXXX
+glitcher
 =====
 
-[![NPM](https://nodei.co/npm/XXXXX.png)](https://nodei.co/npm/XXXXX/)
+[![NPM](https://nodei.co/npm/glitcher.png)](https://nodei.co/npm/glitcher/)
 
-[![david-dm](https://david-dm.org/brycebaril/XXXXX.png)](https://david-dm.org/brycebaril/XXXXX/)
-[![david-dm](https://david-dm.org/brycebaril/XXXXX/dev-status.png)](https://david-dm.org/brycebaril/XXXXX#info=devDependencies/)
-
-```javascript
-
-```
+An image glitching toolbox.
 
 API
 ===
+
+`var inverted = invertRGBA(buffer)`
+---
+
+Inverts an RGBA buffer.
 
 LICENSE
 =======
