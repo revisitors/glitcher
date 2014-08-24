@@ -6,6 +6,12 @@ module.exports.clampColors = clampColors
 module.exports.glitchClamp = glitchClamp
 module.exports.ghostColors = ghostColors
 module.exports.glitchGhost = glitchGhost
+module.exports.pixelshift = pixelshift
+module.exports.grayscale = grayscale
+module.exports.rowslice = rowslice
+module.exports.cloneChannel = cloneChannel
+module.exports.smearChannel = smearChannel
+module.exports.smear = smear
 
 function copy(rgba) {
   var copy = new Buffer(rgba.length)
@@ -180,4 +186,102 @@ function glitchGhost(rgba, max) {
       }
     }
   }
+}
+
+function grayscale(rgba) {
+  for (var i = 0; i < rgba.length; i+= 4) {
+    var brightness = (0.34 * rgba[i] + 0.5 * rgba[i + 1] + 0.16 * rgba[i + 2]) | 0
+    rgba[i] = brightness
+    rgba[i + 1] = brightness
+    rgba[i + 2] = brightness
+  }
+  return rgba
+}
+
+// Does not mutate
+function pixelshift(rgba, pixels) {
+  if (!pixels) {
+    return
+  }
+  pixels = (pixels % (rgba.length / 4)) * 4
+  var left = rgba.slice(0, pixels)
+  var right = rgba.slice(pixels)
+  return Buffer.concat([right, left])
+}
+
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex)
+    currentIndex -= 1
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex]
+    array[currentIndex] = array[randomIndex]
+    array[randomIndex] = temporaryValue
+  }
+
+  return array
+}
+
+function rowslice(rgba, width) {
+  if (!width) {
+    return
+  }
+  width = +width
+  var slices = []
+  var win = 0
+  var dupe = copy(rgba)
+  while (win < dupe.length) {
+    slices.push(dupe.slice(win, win + width))
+    win += width
+  }
+  shuffle(slices).forEach(function (slice, i) {
+    slice.copy(rgba, width * i)
+  })
+  return rgba
+}
+
+function cloneChannel(source, target, channel) {
+  var len = Math.min(source.length, target.length)
+  for (var i = channel; i < len; i += 4) {
+    target[i] = source[i]
+  }
+  return target
+}
+
+function smear(rgba, smear) {
+  var pixel = Buffer(4)
+  var smearcount = smear
+  for (var i = 0; i < rgba.length; i += 4) {
+    if (smearcount < smear) {
+      pixel.copy(rgba, i)
+      smearcount++
+    }
+    else {
+      pixel = rgba.slice(i, i + 4)
+      smearcount = 0
+    }
+  }
+  return rgba
+}
+
+function smearChannel(rgba, channel, smear) {
+  var val = 0
+  var smearcount = smear
+  for (var i = channel; i < rgba.length; i += 4) {
+    if (smearcount < smear) {
+      rgba[i] = val
+      smearcount++
+    }
+    else {
+      val = rgba[i]
+      smearcount = 0
+    }
+  }
+  return rgba
 }
