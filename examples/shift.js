@@ -12,7 +12,7 @@ function pixelshift(orig, callback) {
       return callback(err)
     }
     image.frames.forEach(function (frame) {
-      frame.data = glitcher.pixelshift(frame.data, ((Math.random() * image.height) | 0))
+      glitcher.pixelshift(frame.data, ((Math.random() * image.height) | 0))
     })
     return callback(null, image)
   })

@@ -58,7 +58,8 @@ function redBlueOverlay(original) {
   for (var k = half, l = 0; k < len; k+= 4, l+= 4) {
     shifted[k] = original[l]
   }
-  return shifted
+  shifted.copy(original)
+  return original
 }
 
 // An intentionally glitchy color comparator
@@ -230,7 +231,8 @@ function pixelshift(rgba, pixels) {
   pixels = (pixels % (rgba.length / 4)) * 4
   var left = rgba.slice(0, pixels)
   var right = rgba.slice(pixels)
-  return Buffer.concat([right, left])
+  Buffer.concat([right, left]).copy(rgba)
+  return rgba
 }
 
 function shuffle(array) {

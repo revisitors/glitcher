@@ -12,7 +12,7 @@ function shiftImage(orig, callback) {
       return callback(err)
     }
     image.frames.forEach(function (frame) {
-      frame.data = glitcher.redBlueOverlay(frame.data)
+      glitcher.redBlueOverlay(frame.data)
     })
     return callback(null, image)
   })
