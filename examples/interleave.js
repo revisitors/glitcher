@@ -32,3 +32,12 @@ readimage(owl, function (err, owlImage) {
     fs.writeFileSync("./output/shiftmirror_owl.gif", gif)
   })
 })
+
+readimage(owl, function (err, owlImage) {
+  var dupe = glitcher.copy(owlImage.frames[0].data)
+  glitcher.rowslice(dupe, 34001)
+  glitcher.interleave(owlImage.width, owlImage.frames[0].data, dupe)
+  gifwriter(owlImage, function (err, gif) {
+    fs.writeFileSync("./output/slice_owl.gif", gif)
+  })
+})
