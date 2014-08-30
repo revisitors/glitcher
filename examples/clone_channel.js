@@ -34,3 +34,21 @@ readimage(owl, function (err, owlImage) {
     })
   })
 })
+
+readimage(doge, function (err, image) {
+  for (var i = image.frames.length - 1; i > 0; i--) {
+    dupe = glitcher.copy(image.frames[i - 1].data)
+    glitcher.cloneChannel(dupe, image.frames[i].data, 0)
+    if (i - 2 >= 0) {
+      dupe = glitcher.copy(image.frames[i - 2].data)
+      glitcher.cloneChannel(dupe, image.frames[i].data, 1)
+    }
+    if (i - 3 >= 0) {
+      dupe = glitcher.copy(image.frames[i - 3].data)
+      glitcher.cloneChannel(dupe, image.frames[i].data, 2)
+    }
+  }
+  gifwriter(image, function (err, gif) {
+    fs.writeFileSync("./output/dogogogoge.gif", gif)
+  })
+})

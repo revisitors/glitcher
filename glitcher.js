@@ -6,12 +6,14 @@ module.exports.clampColors = clampColors
 module.exports.glitchClamp = glitchClamp
 module.exports.ghostColors = ghostColors
 module.exports.glitchGhost = glitchGhost
+module.exports.superGhost = superGhost
 module.exports.pixelshift = pixelshift
 module.exports.grayscale = grayscale
 module.exports.rowslice = rowslice
 module.exports.cloneChannel = cloneChannel
 module.exports.smearChannel = smearChannel
 module.exports.smear = smear
+module.exports.interleave = interleave
 
 function copy(rgba) {
   var copy = new Buffer(rgba.length)
@@ -188,6 +190,28 @@ function glitchGhost(rgba, max) {
   }
 }
 
+// keep n `max` colors, then fill the rest with whatever was in memory
+function superGhost(rgba, max) {
+  // take the first `max` colors seen
+  max = max || 256
+  var colorMap = {}
+  var colors = []
+  var ghostBuffer = new Buffer(rgba.length)
+  for (var i = 0; i < rgba.length; i+= 4) {
+    var color = rgba.slice(i, i + 4)
+    if (colors.length < max && !colorMap[color]) {
+      colors.push(color)
+      colorMap[color] = color
+    }
+    else {
+      if (!colorMap[color]) {
+        ghostBuffer.copy(rgba, i, i, i + 4)
+      }
+    }
+  }
+  return rgba
+}
+
 function grayscale(rgba) {
   for (var i = 0; i < rgba.length; i+= 4) {
     var brightness = (0.34 * rgba[i] + 0.5 * rgba[i + 1] + 0.16 * rgba[i + 2]) | 0
@@ -284,4 +308,37 @@ function smearChannel(rgba, channel, smear) {
     }
   }
   return rgba
+}
+
+function interleave(width, left, right) {
+  var rows = (left.length / 4) / width
+  var rowWidth = width * 4
+
+  var fillBlack = (right == null)
+  if (fillBlack) {
+    right = new Buffer(rowWidth)
+    for (var i = 0; i < right.length; i+= 4) {
+      right[i] = 0
+      right[i+1] = 0
+      right[i+2] = 0
+      right[i+3] = 0xff
+    }
+  }
+  var target = new Buffer(left.length)
+  for (var i = 0; i < rows; i++) {
+    var start = i * rowWidth
+    if (i % 2 === 0) {
+      if (fillBlack) {
+        right.copy(target, start)
+      }
+      else {
+        right.copy(target, start, start, start + rowWidth)
+      }
+    }
+    else {
+      left.copy(target, start, start, start + rowWidth)
+    }
+  }
+  target.copy(left)
+  return target
 }
