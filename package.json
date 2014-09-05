@@ -8,9 +8,10 @@
     "test": "test"
   },
   "dependencies": {
-    "readimage": "^1.0.0",
-    "tape": "^2.14.0",
-    "writegif": "^1.0.0"
+    "color-rainbow": "0.0.0",
+    "readimage": "~1.1.1",
+    "tape": "~2.14.0",
+    "writegif": "~1.1.0"
   },
   "devDependencies": {},
   "scripts": {

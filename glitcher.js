@@ -14,6 +14,16 @@ module.exports.cloneChannel = cloneChannel
 module.exports.smearChannel = smearChannel
 module.exports.smear = smear
 module.exports.interleave = interleave
+module.exports.rainbowClamp = rainbowClamp
+module.exports.rainbow = rainbow
+
+var Rainbow = require("color-rainbow")
+
+function rainbowHues(colors) {
+  return Rainbow.create(colors).map(function (color) {
+    return [color.values.rgb[0], color.values.rgb[1], color.values.rgb[2], 0xff]
+  })
+}
 
 function copy(rgba) {
   var copy = new Buffer(rgba.length)
@@ -343,4 +353,42 @@ function interleave(width, left, right) {
   }
   target.copy(left)
   return target
+}
+
+
+function rainbowClamp(rgba) {
+  var hues = rainbowHues(256)
+  for (var i = 0; i < rgba.length; i+= 4) {
+    var brightness = (0.34 * rgba[i] + 0.5 * rgba[i + 1] + 0.16 * rgba[i + 2]) | 0
+    var hue = hues[brightness]
+    rgba[i] = hue[0]
+    rgba[i + 1] = hue[1]
+    rgba[i + 2] = hue[2]
+  }
+  return rgba
+}
+
+function rainbow(frames) {
+  var hues = rainbowHues(frames.length - 1)
+  for (var i = 1; i < frames.length; i++) {
+    mask(frames[0].data, frames[i - 1].data, frames[i].data, hues[i - 1], 50)
+  }
+  return frames
+}
+
+function mask(base, overlay, rgba, hue, tolerance) {
+  tolerance = tolerance != null ? tolerance : 50
+  var dupe = copy(overlay)
+  for (var j = 0; j < dupe.length; j+= 4) {
+    var rDiff = Math.abs(rgba[j] - base[j])
+    var gDiff = Math.abs(rgba[j+1] - base[j+1])
+    var bDiff = Math.abs(rgba[j+2] - base[j+2])
+    if (rDiff > tolerance || gDiff > tolerance || bDiff > tolerance) {
+      dupe[j] = hue[0]
+      dupe[j+1] = hue[1]
+      dupe[j+2] = hue[2]
+    }
+  }
+  dupe.copy(rgba)
+  return rgba
 }
