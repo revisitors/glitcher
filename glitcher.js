@@ -16,19 +16,20 @@ module.exports.smear = smear
 module.exports.interleave = interleave
 module.exports.rainbowClamp = rainbowClamp
 module.exports.rainbow = rainbow
+module.exports.rainbowMatch = rainbowMatch
 
 var Rainbow = require("color-rainbow")
 
 function rainbowHues(colors) {
   return Rainbow.create(colors).map(function (color) {
-    return [color.values.rgb[0], color.values.rgb[1], color.values.rgb[2], 0xff]
+    return new Buffer([color.values.rgb[0], color.values.rgb[1], color.values.rgb[2], 0xff])
   })
 }
 
 function copy(rgba) {
-  var copy = new Buffer(rgba.length)
-  rgba.copy(copy)
-  return copy
+  var dupe = new Buffer(rgba.length)
+  rgba.copy(dupe)
+  return dupe
 }
 
 function invertRGBA(rgba) {
@@ -81,34 +82,73 @@ function colorDiff(reference, pixel) {
   return Math.abs(r) + Math.abs(g) + Math.abs(b)
 }
 
-function clampColors(rgba, max) {
-  // take the first `max` colors seen
-  max = max || 256
+function ghost(rgba, max, tolerance, replacer) {
   var colorMap = {}
   var colors = []
   for (var i = 0; i < rgba.length; i+= 4) {
     var color = rgba.slice(i, i + 4)
-    if (colors.length < max && !colorMap[color]) {
+    var floored = new Buffer(color)
+    floored[0] = ((color[0] / tolerance) | 0) * tolerance
+    floored[1] = ((color[1] / tolerance) | 0) * tolerance
+    floored[2] = ((color[2] / tolerance) | 0) * tolerance
+
+    var key = floored.readInt32LE(0)
+    if (colors.length < max && colorMap[key] === undefined) {
       colors.push(color)
-      colorMap[color] = color
+      colorMap[key] = color
     }
     else {
-      if (!colorMap[color]) {
-        var closest = 0
-        var best = Number.MAX_VALUE
-        for (var j = 0; j < colors.length; j++) {
-          var diff = colorDiff(colors[j], color)
-          if (diff < best) {
-            closest = j
-            best = diff
-          }
-          if (diff === 0) {
-            break;
-          }
-        }
-        colors[closest].copy(rgba, i)
+      if (colorMap[key]) {
+        rgba[i] = floored[0]
+        rgba[i + 1] = floored[1]
+        rgba[i + 2] = floored[2]
+      }
+      else {
+        replacer(i, color, floored, colors)
       }
     }
+  }
+}
+
+function clampColors(rgba, max, tolerance) {
+  ghost(rgba, max || 256, tolerance || 13, function _clampColors(i, color, floored, colorTable) {
+    var closest = 0
+    var best = Number.MAX_VALUE
+    for (var j = 0; j < colorTable.length; j++) {
+      var diff = colorDiff(colorTable[j], color)
+      if (diff === 0) {
+        break
+      }
+      if (diff < best) {
+        closest = j
+        best = diff
+      }
+    }
+    colorTable[closest].copy(rgba, i)
+  })
+}
+
+// TODO need a better "find closest hue from set" algo
+
+function rainbowMatch(rgba, colordepth, tolerance) {
+  var black = new Buffer([0, 0, 0, 255])
+  var white = new Buffer([255, 255, 255, 255])
+  var rainbow = rainbowHues(colordepth).concat(black, white)
+  for (var i = 0; i < rgba.length; i += 4) {
+    var color = rgba.slice(i)
+    var closest = 0
+    var best = Number.MAX_VALUE
+    for (var j = 0; j < rainbow.length; j++) {
+      var diff = colorDiff(rainbow[j], color)
+      if (diff === 0) {
+        break
+      }
+      if (diff < best) {
+        closest = j
+        best = diff
+      }
+    }
+    rainbow[closest].copy(rgba, i)
   }
 }
 
@@ -121,58 +161,6 @@ function randomPixel() {
   ])
 }
 
-function glitchClamp(rgba, max) {
-  // take the first `max` colors seen
-  max = max || 256
-  var colors = []
-  var glitchtable = []
-  for (var i = 0; i < rgba.length; i+= 4) {
-    var closest = 0
-    var color = rgba.slice(i, i + 4)
-    var colorMap = {}
-    if (colors.length < max && !colorMap[color]) {
-      closest = colors.length
-      colors.push(color)
-      glitchtable.push(randomPixel())
-      colorMap[color] = 1
-    }
-    else {
-      var best = Number.MAX_VALUE
-      for (var j = 0; j < colors.length; j++) {
-        var diff = colorDiff(colors[j], color)
-        if (diff < best) {
-          closest = j
-          best = diff
-        }
-        if (diff === 0) {
-          break;
-        }
-      }
-    }
-    glitchtable[closest].copy(rgba, i)
-  }
-}
-
-function ghostColors(rgba, max) {
-  // take the first `max` colors seen
-  max = max || 256
-  var colorMap = {}
-  var colors = []
-  var ghost = randomPixel()
-  for (var i = 0; i < rgba.length; i+= 4) {
-    var color = rgba.slice(i, i + 4)
-    if (colors.length < max && !colorMap[color]) {
-      colors.push(color)
-      colorMap[color] = color
-    }
-    else {
-      if (!colorMap[color]) {
-        ghost.copy(rgba, i)
-      }
-    }
-  }
-}
-
 function randomPalette(size) {
   var palette = []
   for (var i = 0; i < size; i++) {
@@ -181,46 +169,46 @@ function randomPalette(size) {
   return palette
 }
 
-function glitchGhost(rgba, max) {
-  // take the first `max` colors seen
-  max = max || 256
-  var colorMap = {}
-  var colors = []
-  var ghostPalette = randomPalette(max)
-  for (var i = 0; i < rgba.length; i+= 4) {
-    var color = rgba.slice(i, i + 4)
-    if (colors.length < max && !colorMap[color]) {
-      colors.push(color)
-      colorMap[color] = color
-    }
-    else {
-      if (!colorMap[color]) {
-        ghostPalette[(Math.random() * max) | 0].copy(rgba, i)
+function glitchClamp(rgba, max, tolerance) {
+  var glitchTable = randomPalette(max || 256)
+  ghost(rgba, max || 256, tolerance || 13, function _glitchClamp(i, color, floored, colorTable) {
+    var closest = 0
+    var best = Number.MAX_VALUE
+    for (var j = 0; j < colorTable.length; j++) {
+      var diff = colorDiff(colorTable[j], color)
+      if (diff === 0) {
+        break
+      }
+      if (diff < best) {
+        closest = j
+        best = diff
       }
     }
-  }
+    glitchTable[closest].copy(rgba, i)
+  })
+}
+
+function ghostColors(rgba, max, tolerance) {
+  var hue = randomPixel()
+  ghost(rgba, max || 256, tolerance || 13, function _ghostColors(i, color, floored, colorTable) {
+    hue.copy(rgba, i)
+  })
+}
+
+function glitchGhost(rgba, max, tolerance) {
+  max = max || 256
+  var ghostPalette = randomPalette(max)
+  ghost(rgba, max, tolerance || 13, function _glitchGhost(i, color, floored, colorTable) {
+    ghostPalette[(Math.random() * max) | 0].copy(rgba, i)
+  })
 }
 
 // keep n `max` colors, then fill the rest with whatever was in memory
-function superGhost(rgba, max) {
-  // take the first `max` colors seen
-  max = max || 256
-  var colorMap = {}
-  var colors = []
+function superGhost(rgba, max, tolerance) {
   var ghostBuffer = new Buffer(rgba.length)
-  for (var i = 0; i < rgba.length; i+= 4) {
-    var color = rgba.slice(i, i + 4)
-    if (colors.length < max && !colorMap[color]) {
-      colors.push(color)
-      colorMap[color] = color
-    }
-    else {
-      if (!colorMap[color]) {
-        ghostBuffer.copy(rgba, i, i, i + 4)
-      }
-    }
-  }
-  return rgba
+  ghost(rgba, max || 256, tolerance || 13, function _superGhost(i, color, floored, colorTable) {
+    ghostBuffer.copy(rgba, i, i, i + 4)
+  })
 }
 
 function grayscale(rgba) {
@@ -290,9 +278,9 @@ function cloneChannel(source, target, channel) {
   return target
 }
 
-function smear(rgba, smear) {
+function smear(rgba, count) {
   var pixel = Buffer(4)
-  var smearcount = smear
+  var smearcount = count
   for (var i = 0; i < rgba.length; i += 4) {
     if (smearcount < smear) {
       pixel.copy(rgba, i)
@@ -325,11 +313,12 @@ function smearChannel(rgba, channel, smear) {
 function interleave(width, left, right) {
   var rows = (left.length / 4) / width
   var rowWidth = width * 4
+  var i = 0
 
   var fillBlack = (right == null)
   if (fillBlack) {
     right = new Buffer(rowWidth)
-    for (var i = 0; i < right.length; i+= 4) {
+    for (i = 0; i < right.length; i+= 4) {
       right[i] = 0
       right[i+1] = 0
       right[i+2] = 0
@@ -337,7 +326,7 @@ function interleave(width, left, right) {
     }
   }
   var target = new Buffer(left.length)
-  for (var i = 0; i < rows; i++) {
+  for (i = 0; i < rows; i++) {
     var start = i * rowWidth
     if (i % 2 === 0) {
       if (fillBlack) {

@@ -27,6 +27,15 @@
     "type": "git",
     "url": "git@github.com:revisitors/glitcher.git"
   },
+  "jshintConfig": {
+    "asi": true,
+    "validthis": true,
+    "eqnull": true,
+    "node": true,
+    "loopfunc": true,
+    "newcap": false,
+    "eqeqeq": false
+  },
   "bugs": {
     "url": "https://github.com/revisitors/glitcher/issues"
   },
