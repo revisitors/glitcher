@@ -1,6 +1,7 @@
 module.exports.copy = copy
 module.exports.invertRGBA = invertRGBA
 module.exports.reverseRGBA = reverseRGBA
+module.exports.swapChannels = swapChannels
 module.exports.redBlueOverlay = redBlueOverlay
 module.exports.clampColors = clampColors
 module.exports.glitchClamp = glitchClamp
@@ -58,6 +59,26 @@ function reverseRGBA(rgba) {
     rgba[i] = r
     rgba[i + 1] = g
     rgba[i + 2] = b
+  }
+  return rgba
+}
+
+function swapChannels(rgba, swap1, swap2) {
+  if (swap1 == null) {
+    swap1 = (Math.random() * 100) | 0
+  }
+  if (swap2 == null) {
+    swap2 = (Math.random() * 100) | 0
+  }
+  if (swap1 == swap2) {
+    return
+  }
+  for (var i = 0; i < rgba.length; i += 4) {
+    var a = rgba[i + swap1]
+    var b = rgba[i + swap2]
+
+    rgba[i + swap2] = a
+    rgba[i + swap1] = b
   }
   return rgba
 }

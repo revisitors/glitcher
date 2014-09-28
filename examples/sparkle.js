@@ -7,7 +7,7 @@ var readimage = require("readimage")
 
 readimage(doge, function (err, dogeImage) {
   dogeImage.frames.forEach(function (frame) {
-    glitcher.sparkle(dogeImage.width, frame.data)//, 30)
+    glitcher.sparkle(dogeImage.width, frame.data)
   })
   gifwriter(dogeImage, function (err, gif) {
     fs.writeFileSync("./output/sparkledoge.gif", gif)

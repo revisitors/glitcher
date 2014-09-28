@@ -16,7 +16,7 @@ function drawImage(imageObj) {
 
   console.log(data.length)
   console.log("replacing")
-  glitcher.sparkle(imageWidth, data, 64, 25)
+  glitcher.swapChannels(data, (Math.random() * 100) | 0, (Math.random() * 100) | 0)
   for (var i = 0; i < data.length; i++) {
     imageData.data[i] = data[i]
   }
