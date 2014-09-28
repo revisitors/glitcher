@@ -17,6 +17,7 @@ module.exports.interleave = interleave
 module.exports.rainbowClamp = rainbowClamp
 module.exports.rainbow = rainbow
 module.exports.rainbowMatch = rainbowMatch
+module.exports.sparkle = sparkle
 
 var Rainbow = require("color-rainbow")
 
@@ -380,4 +381,38 @@ function mask(base, overlay, rgba, hue, tolerance) {
   }
   dupe.copy(rgba)
   return rgba
+}
+
+function overlaySprite(rgba, sprite, cornerIndex, width, hue) {
+  for (var i = 0; i < sprite.length; i++) {
+    var row = sprite[i]
+    for (var j = 0; j < row.length; j++) {
+      var coord = (cornerIndex + (i * width * 4)) + (j * 4)
+      if (row[j] > 0) {
+        rgba[coord] = hue[0]
+        rgba[coord + 1] = hue[1]
+        rgba[coord + 2] = hue[2]
+      }
+    }
+  }
+}
+
+var sparkleSprite = [
+  [0,0,0,1,0,0,0],
+  [0,0,0,1,0,0,0],
+  [0,0,1,1,1,0,0],
+  [1,1,1,1,1,1,1],
+  [0,0,1,1,1,0,0],
+  [0,0,0,1,0,0,0],
+  [0,0,0,1,0,0,0],
+]
+
+function sparkle(width, rgba, sparkles) {
+  if (sparkles == null) {
+    sparkles = (rgba.length / 4) * 0.01 * Math.random()
+  }
+  for (var i = 0; i < sparkles; i++) {
+    var pos = ((Math.random() * (rgba.length / 4)) | 0) * 4
+    overlaySprite(rgba, sparkleSprite, pos, width, randomPixel())
+  }
 }

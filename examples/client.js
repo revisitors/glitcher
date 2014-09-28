@@ -1,4 +1,4 @@
-var glitcher = require("./glitcher")
+var glitcher = require("../glitcher")
 
 function drawImage(imageObj) {
   var canvas = document.getElementById('myCanvas')
@@ -16,7 +16,7 @@ function drawImage(imageObj) {
 
   console.log(data.length)
   console.log("replacing")
-  glitcher.glitchGhost(data, 64, 25)
+  glitcher.sparkle(imageWidth, data, 64, 25)
   for (var i = 0; i < data.length; i++) {
     imageData.data[i] = data[i]
   }
@@ -26,4 +26,4 @@ var imageObj = new Image()
 imageObj.onload = function() {
   drawImage(this)
 }
-imageObj.src = 'examples/img/owl-glasses.jpg'
+imageObj.src = 'img/owl-glasses.jpg'
