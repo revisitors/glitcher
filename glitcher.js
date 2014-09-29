@@ -15,10 +15,20 @@ module.exports.cloneChannel = cloneChannel
 module.exports.smearChannel = smearChannel
 module.exports.smear = smear
 module.exports.interleave = interleave
+module.exports.interleaveVertical = interleaveVertical
 module.exports.rainbowClamp = rainbowClamp
 module.exports.rainbow = rainbow
 module.exports.rainbowMatch = rainbowMatch
 module.exports.sparkle = sparkle
+module.exports.medianFrame = medianFrame
+module.exports.meanFrame = meanFrame
+module.exports.medianPixel = medianPixel
+module.exports.meanPixel = meanPixel
+module.exports.rowSort = rowSort
+module.exports.chromaKey = chromaKey
+module.exports.chromaKeyInverse = chromaKeyInverse
+module.exports.replaceBackground = replaceBackground
+module.exports.replaceForeground = replaceForeground
 
 var Rainbow = require("color-rainbow")
 
@@ -71,7 +81,10 @@ function swapChannels(rgba, swap1, swap2) {
     swap2 = (Math.random() * 100) | 0
   }
   if (swap1 == swap2) {
-    return
+    swap2++
+  }
+  if (swap1 % 4 == swap2 % 4) {
+    swap2++
   }
   for (var i = 0; i < rgba.length; i += 4) {
     var a = rgba[i + swap1]
@@ -366,6 +379,16 @@ function interleave(width, left, right) {
   return target
 }
 
+function interleaveVertical(left, right) {
+  var fillBlack = (right == null)
+  if (fillBlack) {
+    right = new Buffer([0, 0, 0, 255])
+  }
+  for (var i = 0; i < left.length; i += 8) {
+    var sourceStart = (fillBlack) ? 0 : i
+    right.copy(left, i, sourceStart, sourceStart + 4)
+  }
+}
 
 function rainbowClamp(rgba) {
   var hues = rainbowHues(256)
@@ -436,4 +459,186 @@ function sparkle(width, rgba, sparkles) {
     var pos = ((Math.random() * (rgba.length / 4)) | 0) * 4
     overlaySprite(rgba, sparkleSprite, pos, width, randomPixel())
   }
+}
+
+function sortPixels(pixels) {
+  var split = []
+  for (var i = 0; i < pixels.length; i += 4) {
+    split.push(pixels.slice(i, i + 4))
+  }
+  var sorted = split.sort(function (a, b) {
+    return (a[0] + a[1] + a[2] + a[3]) - (b[1] + b[1] + b[2] + b[3])
+  })
+  var newbuff = new Buffer(pixels.length)
+  for (var j = 0; j < sorted.length; j++) {
+    newbuff[j * 4] = sorted[j][0]
+    newbuff[j * 4 + 1] = sorted[j][1]
+    newbuff[j * 4 + 2] = sorted[j][2]
+    newbuff[j * 4 + 3] = sorted[j][3]
+  }
+  return newbuff
+}
+
+function medianPixel(pixels) {
+  var sorted = sortPixels(pixels)
+  var mid = (sorted.length / 2) - ((sorted.length / 2) % 4)
+  return sorted.slice(mid, mid + 4)
+}
+
+function medianFrame(frames, alg) {
+  return avg(frames, medianPixel)
+}
+
+function meanPixel(pixels) {
+  if (pixels.length === 0) {
+    return new Buffer(4)
+  }
+  if (pixels.length === 4) {
+    return pixels
+  }
+  var p = new Buffer(4)
+  var r = 0
+  var g = 0
+  var b = 0
+  var a = 0
+  for (var i = 0; i < pixels.length; i+= 4) {
+    r += pixels[i]
+    g += pixels[i + 1]
+    b += pixels[i + 2]
+    a += pixels[i + 3]
+  }
+  p[0] = r / (pixels.length / 4)
+  p[1] = g / (pixels.length / 4)
+  p[2] = b / (pixels.length / 4)
+  p[3] = a / (pixels.length / 4)
+  return p
+}
+
+function meanFrame(frames) {
+  return avg(frames, meanPixel)
+}
+
+function avg(frames, alg) {
+  var len = frames[0].data.length
+  if (len === 1) {
+    return frames[0].data
+  }
+  var avgFrame = new Buffer(len)
+  for (var i = 0; i < len; i += 4) {
+    var pixels = new Buffer(4 * frames.length)
+    for (var j = 0; j < frames.length; j++) {
+      frames[j].data.copy(pixels, j * 4, i, i + 4)
+    }
+    var avgPixel = alg(pixels)
+    avgPixel.copy(avgFrame, i)
+  }
+  return avgFrame
+}
+
+function rowSort(rowWidth, rgba) {
+  var sorted = new Buffer(rgba.length)
+  for (var i = 0; i < rgba.length; i += rowWidth * 4) {
+    var pixels = rgba.slice(i, (Math.min(rgba.length, (i + rowWidth * 4))))
+    var spix = sortPixels(pixels)
+    spix.copy(sorted, i)
+  }
+  sorted.copy(rgba)
+  return rgba
+}
+
+function inSphere(centroid, radius, obs) {
+  var r = obs[0] - centroid[0]
+  var g = obs[1] - centroid[1]
+  var b = obs[2] - centroid[2]
+  var locus = Math.pow(r, 2) + Math.pow(g, 2) + Math.pow(b, 2)
+  return locus < Math.pow(radius, 2)
+}
+
+function getAlpha(rgba) {
+  var mean = meanPixel(rgba)
+  alpha = ((mean[0] + mean[1] + mean[2]) / 3) | 0
+  return alpha
+}
+
+function _chromaKey(rgba, maskHue, background, alpha, isInside) {
+  for (var i = 0; i < rgba.length; i += 4) {
+    if (inSphere(maskHue, alpha, rgba.slice(i, i + 4)) == isInside) {
+      background.copy(rgba, i, i, i + 4)
+    }
+  }
+}
+
+function chromaKey(rgba, maskHue, background, alpha) {
+  if (alpha == null) {
+    alpha = getAlpha(rgba) * 2
+  }
+  return _chromaKey(rgba, maskHue, background, alpha, true)
+}
+
+function chromaKeyInverse(rgba, maskHue, background, alpha) {
+  if (alpha == null) {
+    alpha = getAlpha(rgba) * 2
+  }
+  return _chromaKey(rgba, maskHue, background, alpha, false)
+}
+
+function replaceForeground(frames, replacer, tolerance) {
+  var background = medianFrame(frames)
+  for (var i = 0; i < frames.length; i++) {
+    var dupe = copy(frames[i].data)
+    replacer(dupe)
+
+    var rgba = frames[i].data
+    for (var j = 0; j < background.length; j += 4) {
+      var rDiff = Math.abs(rgba[j] - background[j])
+      var gDiff = Math.abs(rgba[j+1] - background[j+1])
+      var bDiff = Math.abs(rgba[j+2] - background[j+2])
+      if (rDiff > tolerance || gDiff > tolerance || bDiff > tolerance) {
+        var start = (j > dupe.length) ? 0 : j
+        rgba[j] = dupe[start + 0]
+        rgba[j+1] = dupe[start + 1]
+        rgba[j+2] = dupe[start + 2]
+      }
+    }
+  }
+}
+
+function replaceBackground(frames, replacer, tolerance) {
+  tolerance = tolerance != null ? tolerance : 50
+
+  var background = medianFrame(frames)
+  for (var i = 0; i < frames.length; i++) {
+    var dupe = copy(frames[i].data)
+    replacer(dupe)
+    var rgba = frames[i].data
+    for (var j = 0; j < background.length; j += 4) {
+      var rDiff = Math.abs(rgba[j] - background[j])
+      var gDiff = Math.abs(rgba[j+1] - background[j+1])
+      var bDiff = Math.abs(rgba[j+2] - background[j+2])
+      if (!(rDiff > tolerance || gDiff > tolerance || bDiff > tolerance)) {
+        var start = (j > dupe.length) ? 0 : j
+        rgba[j] = dupe[start + 0]
+        rgba[j+1] = dupe[start + 1]
+        rgba[j+2] = dupe[start + 2]
+      }
+    }
+  }
+}
+
+function unmask(base, rgba, replacement, tolerance) {
+  tolerance = tolerance != null ? tolerance : 50
+  var dupe = copy(base)
+  for (var j = 0; j < dupe.length; j+= 4) {
+    var rDiff = Math.abs(rgba[j] - base[j])
+    var gDiff = Math.abs(rgba[j+1] - base[j+1])
+    var bDiff = Math.abs(rgba[j+2] - base[j+2])
+    if (rDiff > tolerance || gDiff > tolerance || bDiff > tolerance) {
+      var start = (j > replacement.length) ? 0 : j
+      dupe[j] = replacement[start + 0]
+      dupe[j+1] = replacement[start + 1]
+      dupe[j+2] = replacement[start + 2]
+    }
+  }
+  dupe.copy(rgba)
+  return rgba
 }

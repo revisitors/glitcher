@@ -41,3 +41,25 @@ readimage(owl, function (err, owlImage) {
     fs.writeFileSync("./output/slice_owl.gif", gif)
   })
 })
+
+readimage(doge, function (err, dogeImage) {
+  dogeImage.frames.forEach(function (frame) {
+    glitcher.interleaveVertical(frame.data)
+  })
+
+  gifwriter(dogeImage, function (err, gif) {
+    fs.writeFileSync("./output/bars_doge.gif", gif)
+  })
+})
+
+readimage(doge, function (err, dogeImage) {
+  dogeImage.frames.forEach(function (frame) {
+    var dupe = glitcher.copy(frame.data)
+    glitcher.reverseRGBA(dupe)
+    glitcher.interleaveVertical(frame.data, dupe)
+  })
+
+  gifwriter(dogeImage, function (err, gif) {
+    fs.writeFileSync("./output/band_doge.gif", gif)
+  })
+})

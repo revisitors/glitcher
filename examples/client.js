@@ -17,6 +17,9 @@ function drawImage(imageObj) {
   console.log(data.length)
   console.log("replacing")
   glitcher.swapChannels(data, (Math.random() * 100) | 0, (Math.random() * 100) | 0)
+  //glitcher.chromaKey(data, glitcher.meanPixel(data), new Buffer(data.length), 120)
+  //glitcher.chromaKeyInverse(data, [0, 255, 0], new Buffer(data.length), 200)
+
   for (var i = 0; i < data.length; i++) {
     imageData.data[i] = data[i]
   }
