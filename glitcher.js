@@ -563,7 +563,8 @@ function getAlpha(rgba) {
 function _chromaKey(rgba, maskHue, background, alpha, isInside) {
   for (var i = 0; i < rgba.length; i += 4) {
     if (inSphere(maskHue, alpha, rgba.slice(i, i + 4)) == isInside) {
-      background.copy(rgba, i, i, i + 4)
+      var start = (i > background.length) ? 0 : i
+      background.copy(rgba, i, start, start + 4)
     }
   }
 }
