@@ -10,6 +10,7 @@ module.exports.glitchGhost = glitchGhost
 module.exports.superGhost = superGhost
 module.exports.pixelshift = pixelshift
 module.exports.grayscale = grayscale
+module.exports.fiftiesTv = fiftiesTv
 module.exports.rowslice = rowslice
 module.exports.cloneChannel = cloneChannel
 module.exports.smearChannel = smearChannel
@@ -256,6 +257,22 @@ function grayscale(rgba) {
   return rgba
 }
 
+function fiftiesTv(frameData, snowVal) {
+  snowVal = snowVal || 5
+  for (var i = 0; i < frameData.length; i+=4) {
+    var maxSaturation = Math.max.apply(null, [
+        frameData[i], frameData[i+1], frameData[i+2]
+    ])
+    if (maxSaturation % snowVal === 0) {
+      maxSaturation = 255
+    }
+    frameData[i] = maxSaturation
+    frameData[i+1] = maxSaturation
+    frameData[i+2] = maxSaturation
+  }
+  return frameData
+}
+
 // Does not mutate
 function pixelshift(rgba, pixels) {
   if (!pixels) {
@@ -467,7 +484,7 @@ function sortPixels(pixels) {
     split.push(pixels.slice(i, i + 4))
   }
   var sorted = split.sort(function (a, b) {
-    return (a[0] + a[1] + a[2] + a[3]) - (b[1] + b[1] + b[2] + b[3])
+    return (a[0] + a[1] + a[2] + a[3]) - (b[0] + b[1] + b[2] + b[3])
   })
   var newbuff = new Buffer(pixels.length)
   for (var j = 0; j < sorted.length; j++) {
@@ -507,10 +524,10 @@ function meanPixel(pixels) {
     b += pixels[i + 2]
     a += pixels[i + 3]
   }
-  p[0] = r / (pixels.length / 4)
-  p[1] = g / (pixels.length / 4)
-  p[2] = b / (pixels.length / 4)
-  p[3] = a / (pixels.length / 4)
+  p[0] = (r / (pixels.length / 4)) >>> 0
+  p[1] = (g / (pixels.length / 4)) >>> 0
+  p[2] = (b / (pixels.length / 4)) >>> 0
+  p[3] = (a / (pixels.length / 4)) >>> 0
   return p
 }
 
@@ -584,7 +601,7 @@ function chromaKeyInverse(rgba, maskHue, background, alpha) {
 }
 
 function replaceForeground(frames, replacer, tolerance) {
-  var background = medianFrame(frames)
+  var background = meanFrame(frames)
   for (var i = 0; i < frames.length; i++) {
     var dupe = copy(frames[i].data)
     replacer(dupe)
@@ -607,7 +624,7 @@ function replaceForeground(frames, replacer, tolerance) {
 function replaceBackground(frames, replacer, tolerance) {
   tolerance = tolerance != null ? tolerance : 50
 
-  var background = medianFrame(frames)
+  var background = meanFrame(frames)
   for (var i = 0; i < frames.length; i++) {
     var dupe = copy(frames[i].data)
     replacer(dupe)
