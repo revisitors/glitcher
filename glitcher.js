@@ -258,7 +258,7 @@ function grayscale(rgba) {
 }
 
 function fiftiesTv(frameData, snowVal) {
-  snowVal = snowVal || 5
+  snowVal = snowVal || (((Math.random() * 10) | 0) + 5)
   for (var i = 0; i < frameData.length; i+=4) {
     var maxSaturation = Math.max.apply(null, [
         frameData[i], frameData[i+1], frameData[i+2]
