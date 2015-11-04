@@ -1,6 +1,8 @@
 var glitcher = require("../glitcher")
 
 var fs = require("fs")
+var file = process.argv[2] || "./img/doge_jump2.gif"
+var doge = fs.readFileSync(file);
 var owl = fs.readFileSync("./img/owl-glasses.jpg")
 var noby = fs.readFileSync("./img/can-u-not-noby.jpg")
 var gifwriter = require("writegif")
@@ -17,6 +19,13 @@ function shiftImage(orig, callback) {
     return callback(null, image)
   })
 }
+
+shiftImage(doge, function (err, img) {
+  gifwriter(img, function (err, gif) {
+    fs.writeFileSync("output/redblue-overlay-doge.gif", gif)
+  })
+})
+
 
 shiftImage(owl, function (err, img) {
   gifwriter(img, function (err, gif) {
