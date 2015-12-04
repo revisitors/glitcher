@@ -1,7 +1,8 @@
 var glitcher = require("../glitcher")
 
 var fs = require("fs")
-var doge = fs.readFileSync("./img/doge_jump2.gif")
+var img = process.argv[2] || "./img/doge_jump2.gif"
+var doge = fs.readFileSync(img)
 var gifwriter = require("writegif")
 var readimage = require("readimage")
 
@@ -18,7 +19,6 @@ readimage(doge, function (err, dogeImage) {
   var m = glitcher.meanFrame(dogeImage.frames)
   var i = new readimage.Image(dogeImage.height, dogeImage.width)
   i.addFrame(m)
-  console.log(glitcher.medianPixel(m))
 
   gifwriter(i, function (err, gif) {
     fs.writeFileSync("./output/meandoge.gif", gif)
