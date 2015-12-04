@@ -30,6 +30,8 @@ module.exports.chromaKey = chromaKey
 module.exports.chromaKeyInverse = chromaKeyInverse
 module.exports.replaceBackground = replaceBackground
 module.exports.replaceForeground = replaceForeground
+module.exports.firstFrameBackground = firstFrameBackground
+module.exports.findChromaKey = findChromaKey
 
 var Rainbow = require("color-rainbow")
 
@@ -640,6 +642,38 @@ function replaceBackground(frames, replacer, tolerance) {
         rgba[j+2] = dupe[start + 2]
       }
     }
+  }
+}
+
+function firstFrameBackground(frames, replacer, tolerance) {
+  tolerance = tolerance != null ? tolerance : 50
+
+  var background = copy(frames[0].data)
+  for (var i = 0; i < frames.length; i++) {
+    var dupe = copy(frames[i].data)
+    replacer(dupe)
+    var rgba = frames[i].data
+    for (var j = 0; j < background.length; j += 4) {
+      var rDiff = Math.abs(rgba[j] - background[j])
+      var gDiff = Math.abs(rgba[j+1] - background[j+1])
+      var bDiff = Math.abs(rgba[j+2] - background[j+2])
+      if (!(rDiff > tolerance || gDiff > tolerance || bDiff > tolerance)) {
+      //if (rDiff + gDiff + bDiff < tolerance) {
+        var start = (j > dupe.length) ? 0 : j
+        rgba[j] = dupe[start + 0]
+        rgba[j+1] = dupe[start + 1]
+        rgba[j+2] = dupe[start + 2]
+      }
+    }
+  }
+}
+
+function findChromaKey(frames, replacer) {
+  var chroma = medianPixel(frames[0].data)
+  for (var i = 0; i < frames.length; i++) {
+    var dupe = copy(frames[i].data)
+    replacer(dupe)
+    chromaKey(frames[i].data, chroma, dupe)
   }
 }
 
