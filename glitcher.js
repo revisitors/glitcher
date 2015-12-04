@@ -538,7 +538,16 @@ function meanFrame(frames) {
 }
 
 function avg(frames, alg) {
-  var len = frames[0].data.length
+  // Some images strangely have different pixel counts per frame.
+  // Pick the largest and go with that I guess?
+  var len = frames.reduce(function min(p, c) {
+    var length = c.data.length
+    if (length <= p) {
+      return length
+    }
+    return p
+  }, Number.MAX_VALUE)
+
   if (len === 1) {
     return frames[0].data
   }
@@ -546,7 +555,10 @@ function avg(frames, alg) {
   for (var i = 0; i < len; i += 4) {
     var pixels = new Buffer(4 * frames.length)
     for (var j = 0; j < frames.length; j++) {
-      frames[j].data.copy(pixels, j * 4, i, i + 4)
+      pixels[j*4] = frames[j].data[i]
+      pixels[j*4+1] = frames[j].data[i+1]
+      pixels[j*4+2] = frames[j].data[i+2]
+      pixels[j*4+3] = frames[j].data[i+3]
     }
     var avgPixel = alg(pixels)
     avgPixel.copy(avgFrame, i)
