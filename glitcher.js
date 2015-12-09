@@ -552,8 +552,8 @@ function avg(frames, alg) {
     return frames[0].data
   }
   var avgFrame = new Buffer(len)
+  var pixels = new Buffer(4 * frames.length)
   for (var i = 0; i < len; i += 4) {
-    var pixels = new Buffer(4 * frames.length)
     for (var j = 0; j < frames.length; j++) {
       pixels[j*4] = frames[j].data[i]
       pixels[j*4+1] = frames[j].data[i+1]
